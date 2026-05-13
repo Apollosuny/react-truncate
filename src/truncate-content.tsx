@@ -40,29 +40,26 @@ export function TruncateContent({
   const containerRef = useRef<HTMLSpanElement>(null)
   const ellipsisRef = useRef<HTMLSpanElement>(null)
   const canvasCtxRef = useRef<CanvasRenderingContext2D | null>(null)
+  const letterSpacingRef = useRef(0)
 
   const [targetWidth, setTargetWidth] = useState(0)
   const [renderedLines, setRenderedLines] = useState<LineNode[]>([])
   const prevIsTruncatedRef = useRef<boolean | null>(null)
 
-  // ── Read container width + initialise canvas font ─────────────────
+  // ── Read container width + initialise canvas context ──────────────
   const calcTargetWidth = useCallback(() => {
     const el = containerRef.current
     if (!el) return
 
-    const w = Math.floor(
-      el.parentElement?.getBoundingClientRect().width ??
-        el.getBoundingClientRect().width
-    )
+    // Use the element's own width — as a display:block span it always
+    // matches the parent's content area, so there's no padding to subtract.
+    const w = Math.floor(el.getBoundingClientRect().width)
     if (!w) return
 
     const style = window.getComputedStyle(el)
-    const font = [
-      style.fontWeight,
-      style.fontStyle,
-      style.fontSize,
-      style.fontFamily,
-    ].join(' ')
+
+    // Correct CSS font shorthand order: style weight size family
+    const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
 
     if (!canvasCtxRef.current) {
       const canvas = document.createElement('canvas')
@@ -71,6 +68,9 @@ export function TruncateContent({
     if (canvasCtxRef.current) {
       canvasCtxRef.current.font = font
     }
+
+    // canvas.measureText ignores letter-spacing — track it separately
+    letterSpacingRef.current = parseFloat(style.letterSpacing) || 0
 
     setTargetWidth(w)
   }, [])
@@ -81,19 +81,22 @@ export function TruncateContent({
     const el = containerRef.current
     if (!el) return
     const ro = new ResizeObserver(calcTargetWidth)
-    ro.observe(el.parentElement ?? el)
+    ro.observe(el)
     return () => ro.disconnect()
   }, [calcTargetWidth, text])
 
+  // Measure text width via canvas + letter-spacing compensation
   const measureWidth = useCallback((t: string) => {
-    return canvasCtxRef.current?.measureText(t).width ?? 0
+    const raw = canvasCtxRef.current?.measureText(t).width ?? 0
+    return raw + t.length * letterSpacingRef.current
   }, [])
 
   // ── Build truncated lines ──────────────────────────────────────────
   useEffect(() => {
     if (expanded || !targetWidth || !canvasCtxRef.current) return
 
-    const ellipsisW = ellipsisRef.current?.offsetWidth ?? 0
+    // Off-screen span is no longer clipped so getBoundingClientRect is reliable
+    const ellipsisW = ellipsisRef.current?.getBoundingClientRect().width ?? 0
     const result: LineNode[] = []
     const textLines = text.split('\n').map((l) => l.split(' '))
     let didTruncate = true
@@ -111,7 +114,7 @@ export function TruncateContent({
 
       const fullLineText = words.join(' ')
 
-      // Entire remaining text fits on this line
+      // Entire remaining text fits — no truncation needed
       if (measureWidth(fullLineText) <= targetWidth && textLines.length === 1) {
         didTruncate = false
         result.push(<span key={line}>{fullLineText}</span>)
@@ -200,15 +203,24 @@ export function TruncateContent({
               : text}
           </span>
 
-          {/* Hidden span used to measure ellipsis + more button width */}
+          {/*
+           * Off-screen span used to measure the combined width of
+           * ellipsis + more button before layout runs.
+           * Must NOT be clipped (no overflow:hidden + width:0) so that
+           * getBoundingClientRect() returns the true rendered width.
+           */}
           <span
             aria-hidden
-            style={{ position: 'absolute', overflow: 'hidden', width: 0, height: 0 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '-9999px',
+              visibility: 'hidden',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
           >
-            <span
-              ref={ellipsisRef}
-              style={{ display: 'inline-block', whiteSpace: 'nowrap' }}
-            >
+            <span ref={ellipsisRef} style={{ display: 'inline-block' }}>
               {ellipsis}
               {more?.(toggle)}
             </span>
