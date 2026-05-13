@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / Discussion
+    url: https://github.com/apollosuny/react-truncate/discussions
+    about: Ask questions or discuss ideas here rather than opening an issue
