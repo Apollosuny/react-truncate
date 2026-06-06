@@ -32,8 +32,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=moderate
+      # Gate on production dependencies only — these are the ones consumers
+      # inherit when they install the package. devDependencies (vitest,
+      # Storybook, etc.) never ship, so their advisories shouldn't block a
+      # release. Review dev-tooling advisories separately via a local
+      # `pnpm audit` rather than failing CI on them.
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level=moderate
 
   # ── 2. Static analysis (Semgrep) ────────────────────────────────────────────
   semgrep:
