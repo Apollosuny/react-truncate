@@ -11,6 +11,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.2.0] — 2026-06-06
+
+### Added
+- `less` prop on `<Truncate.Content>`, symmetric with `more` — keeps the "see less" control inline on the same line as the text once expanded
+- Font-aware re-measurement: the cutoff is recalculated after web fonts finish loading (`document.fonts.ready`), so it no longer drifts when a custom font resolves after first paint
+- `useTruncate()` now also returns `lines`, matching its documented contract
+
+### Fixed
+- `aria-controls` is now wired automatically from `<Truncate.Toggle>` to the `<Truncate.Content>` region (the generated id was previously never applied)
+- Full text is exposed to assistive tech while truncated: the clipped fragment is hidden from the accessibility tree and the complete text is provided via a visually-hidden copy; the inline toggle stays focusable and announced
+- Measurement no longer re-runs on every render — the `more` callback was dropped from the measurement effect's dependencies, so passing an inline closure (the common case) no longer triggers redundant re-measurements
+
+### Changed
+- CI dependency audit now scopes to production dependencies (`pnpm audit --prod`), matching the security surface consumers actually install
+
+---
+
 ## [0.1.0] — 2026-05-13
 
 ### Added
@@ -25,5 +42,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - SSR-safe via `useIsomorphicLayoutEffect`
 - React 18 and 19 peer dependency support
 
-[Unreleased]: https://github.com/apollosuny/react-truncate/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/apollosuny/react-truncate/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/apollosuny/react-truncate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/apollosuny/react-truncate/releases/tag/v0.1.0
