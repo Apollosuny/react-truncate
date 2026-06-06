@@ -20,6 +20,17 @@ export interface TruncateContentProps extends React.HTMLAttributes<HTMLSpanEleme
    * )}
    */
   more?: (toggle: () => void) => React.ReactNode
+  /**
+   * Inline element rendered after the full text once expanded. Mirrors `more`,
+   * keeping the collapse affordance (e.g. "see less") on the same line as the
+   * text instead of dropping it onto a new line.
+   *
+   * @example
+   * less={(toggle) => (
+   *   <button onClick={toggle} className="text-blue-500">see less</button>
+   * )}
+   */
+  less?: (toggle: () => void) => React.ReactNode
 }
 
 type LineNode = React.ReactElement | string
@@ -32,6 +43,7 @@ export function TruncateContent({
   children: text,
   ellipsis = '... ',
   more,
+  less,
   className,
   ...props
 }: TruncateContentProps) {
@@ -185,7 +197,15 @@ export function TruncateContent({
       {...props}
     >
       {expanded ? (
-        text
+        <>
+          {text}
+          {less && (
+            <>
+              {' '}
+              {less(toggle)}
+            </>
+          )}
+        </>
       ) : (
         <>
           <span style={{ display: 'block' }}>

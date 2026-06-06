@@ -7,22 +7,10 @@ const LONG =
 
 const SHORT = 'Short text that fits in a single line without any truncation.'
 
-// Shared inline toggle style — mimics Facebook's "See more" link
-const seeMoreStyle: React.CSSProperties = {
-  color: '#1877f2',
-  background: 'none',
-  border: 'none',
-  padding: 0,
-  cursor: 'pointer',
-  fontWeight: 600,
-  fontSize: 'inherit',
-  fontFamily: 'inherit',
-}
-
-// Shared "See less" block toggle
-const seeLessStyle: React.CSSProperties = {
-  display: 'block',
-  marginTop: 4,
+// Shared inline toggle style — mimics Facebook's "See more"/"See less" link.
+// Used for both `more` and `less`, so the affordance stays on the same line
+// as the text in either state.
+const inlineToggleStyle: React.CSSProperties = {
   color: '#1877f2',
   background: 'none',
   border: 'none',
@@ -51,26 +39,27 @@ type Story = StoryObj<typeof Truncate>
 
 // ─── Facebook-style inline ─────────────────────────────────────────────────
 // "See more" lives at the end of the last truncated line (inline).
-// "See less" appears below the full text after expanding.
+// "See less" stays inline at the end of the full text after expanding.
 
 export const FacebookStyle: Story = {
-  name: 'Facebook-style — inline See more',
+  name: 'Facebook-style — inline See more / See less',
   render: () => (
     <Truncate lines={3}>
       <Truncate.Content
         ellipsis="... "
         more={(toggle) => (
-          <button style={seeMoreStyle} onClick={toggle}>
+          <button style={inlineToggleStyle} onClick={toggle}>
             See more
+          </button>
+        )}
+        less={(toggle) => (
+          <button style={inlineToggleStyle} onClick={toggle}>
+            See less
           </button>
         )}
       >
         {LONG}
       </Truncate.Content>
-      {/* Only shows when expanded — the inline `more` handles the collapsed state */}
-      <Truncate.Toggle style={seeLessStyle}>
-        {({ expanded }) => (expanded ? 'See less' : null)}
-      </Truncate.Toggle>
     </Truncate>
   ),
 }
@@ -82,16 +71,18 @@ export const TwoLines: Story = {
       <Truncate.Content
         ellipsis="... "
         more={(toggle) => (
-          <button style={seeMoreStyle} onClick={toggle}>
+          <button style={inlineToggleStyle} onClick={toggle}>
             See more
+          </button>
+        )}
+        less={(toggle) => (
+          <button style={inlineToggleStyle} onClick={toggle}>
+            See less
           </button>
         )}
       >
         {LONG}
       </Truncate.Content>
-      <Truncate.Toggle style={seeLessStyle}>
-        {({ expanded }) => (expanded ? 'See less' : null)}
-      </Truncate.Toggle>
     </Truncate>
   ),
 }
@@ -102,16 +93,18 @@ export const ShortTextNoToggle: Story = {
     <Truncate lines={3}>
       <Truncate.Content
         more={(toggle) => (
-          <button style={seeMoreStyle} onClick={toggle}>
+          <button style={inlineToggleStyle} onClick={toggle}>
             See more
+          </button>
+        )}
+        less={(toggle) => (
+          <button style={inlineToggleStyle} onClick={toggle}>
+            See less
           </button>
         )}
       >
         {SHORT}
       </Truncate.Content>
-      <Truncate.Toggle style={seeLessStyle}>
-        {({ expanded }) => (expanded ? 'See less' : null)}
-      </Truncate.Toggle>
     </Truncate>
   ),
 }
@@ -125,16 +118,18 @@ export const CustomEllipsis: Story = {
       <Truncate.Content
         ellipsis=" "
         more={(toggle) => (
-          <button style={seeMoreStyle} onClick={toggle}>
+          <button style={inlineToggleStyle} onClick={toggle}>
             [xem thêm]
+          </button>
+        )}
+        less={(toggle) => (
+          <button style={inlineToggleStyle} onClick={toggle}>
+            [thu gọn]
           </button>
         )}
       >
         {LONG}
       </Truncate.Content>
-      <Truncate.Toggle style={seeLessStyle}>
-        {({ expanded }) => (expanded ? '[thu gọn]' : null)}
-      </Truncate.Toggle>
     </Truncate>
   ),
 }
@@ -160,16 +155,18 @@ export const Controlled: Story = {
           <Truncate.Content
             ellipsis="... "
             more={(toggle) => (
-              <button style={seeMoreStyle} onClick={toggle}>
+              <button style={inlineToggleStyle} onClick={toggle}>
                 See more
+              </button>
+            )}
+            less={(toggle) => (
+              <button style={inlineToggleStyle} onClick={toggle}>
+                See less
               </button>
             )}
           >
             {LONG}
           </Truncate.Content>
-          <Truncate.Toggle style={seeLessStyle}>
-            {({ expanded: exp }) => (exp ? 'See less' : null)}
-          </Truncate.Toggle>
         </Truncate>
       </div>
     )
@@ -179,29 +176,26 @@ export const Controlled: Story = {
 // ─── asChild ──────────────────────────────────────────────────────────────
 
 export const AsChild: Story = {
-  name: 'Toggle asChild (<a> tag)',
+  name: 'Inline toggle as <a> tag',
   render: () => (
     <Truncate lines={3}>
       <Truncate.Content
         ellipsis="... "
         more={(toggle) => (
-          <button style={seeMoreStyle} onClick={toggle}>
+          // eslint-disable-next-line jsx-a11y/anchor-is-valid
+          <a href="#" style={inlineToggleStyle} onClick={toggle}>
             See more
-          </button>
+          </a>
+        )}
+        less={(toggle) => (
+          // eslint-disable-next-line jsx-a11y/anchor-is-valid
+          <a href="#" style={inlineToggleStyle} onClick={toggle}>
+            See less
+          </a>
         )}
       >
         {LONG}
       </Truncate.Content>
-      <Truncate.Toggle asChild>
-        {({ expanded }) =>
-          expanded ? (
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a href="#" style={{ ...seeLessStyle, display: 'block', marginTop: 4 }}>
-              See less
-            </a>
-          ) : null
-        }
-      </Truncate.Toggle>
     </Truncate>
   ),
 }
@@ -220,14 +214,14 @@ export const DataStateStyling: Story = {
         <Truncate.Content
           ellipsis="... "
           more={(toggle) => (
-            <button style={seeMoreStyle} onClick={toggle}>See more</button>
+            <button style={inlineToggleStyle} onClick={toggle}>See more</button>
+          )}
+          less={(toggle) => (
+            <button style={inlineToggleStyle} onClick={toggle}>See less</button>
           )}
         >
           {LONG}
         </Truncate.Content>
-        <Truncate.Toggle style={seeLessStyle}>
-          {({ expanded }) => (expanded ? 'See less' : null)}
-        </Truncate.Toggle>
       </Truncate>
     </>
   ),
