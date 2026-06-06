@@ -41,6 +41,7 @@ function TruncateRoot({
     lines,
     toggle,
     setIsTruncated,
+    contentId,
   }
 
   return (

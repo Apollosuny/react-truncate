@@ -271,6 +271,92 @@ describe('Truncate.Toggle', () => {
   })
 })
 
+// ─── Accessibility ────────────────────────────────────────────────────────────
+
+// jsdom returns null from canvas.getContext, so measurement never runs by
+// default. Stub a 2d context (8px per char) so truncation actually computes.
+function mockCanvas() {
+  Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+    configurable: true,
+    value: () => ({
+      font: '',
+      measureText: (t: string) => ({ width: t.length * 8 }),
+    }),
+  })
+}
+
+function mockWidth(width = 300) {
+  Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({ width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) }),
+  })
+}
+
+describe('accessibility', () => {
+  it('auto-wires aria-controls from Toggle to the Content id', () => {
+    render(
+      <Truncate lines={3} expanded={true}>
+        <Truncate.Content data-testid="content">{LONG}</Truncate.Content>
+        <Truncate.Toggle data-testid="toggle">Less</Truncate.Toggle>
+      </Truncate>
+    )
+    const content = screen.getByTestId('content')
+    const toggle = screen.getByTestId('toggle')
+    expect(content.id).toBeTruthy()
+    expect(toggle.getAttribute('aria-controls')).toBe(content.id)
+  })
+
+  it('lets an explicit contentId on Toggle override the context id', () => {
+    render(
+      <Truncate lines={3} expanded={true}>
+        <Truncate.Content data-testid="content">{LONG}</Truncate.Content>
+        <Truncate.Toggle contentId="explicit" data-testid="toggle">
+          Less
+        </Truncate.Toggle>
+      </Truncate>
+    )
+    expect(screen.getByTestId('toggle').getAttribute('aria-controls')).toBe('explicit')
+  })
+
+  it('exposes the full text to assistive tech when truncated', () => {
+    mockCanvas()
+    mockWidth(300)
+    render(
+      <Truncate lines={2}>
+        <Truncate.Content>{LONG}</Truncate.Content>
+      </Truncate>
+    )
+    // The complete text is present in the DOM (visually-hidden copy) even
+    // though only a clipped fragment is shown.
+    expect(document.body.textContent).toContain(LONG.trim())
+  })
+
+  it('keeps the inline more toggle outside the aria-hidden fragment', () => {
+    mockCanvas()
+    mockWidth(300)
+    render(
+      <Truncate lines={2}>
+        <Truncate.Content
+          more={(toggle) => (
+            <button data-testid="inline-more" onClick={toggle}>
+              See more
+            </button>
+          )}
+        >
+          {LONG}
+        </Truncate.Content>
+      </Truncate>
+    )
+    // The button is also rendered once in the off-screen measurement span;
+    // assert that a visible copy exists outside any aria-hidden subtree, so the
+    // focusable control is announced to assistive tech.
+    const visible = screen
+      .getAllByTestId('inline-more')
+      .filter((el) => el.closest('[aria-hidden="true"]') === null)
+    expect(visible).toHaveLength(1)
+  })
+})
+
 // ─── useTruncate hook ─────────────────────────────────────────────────────────
 
 describe('useTruncate hook', () => {

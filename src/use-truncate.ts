@@ -11,6 +11,6 @@ import { useTruncateContext } from './context'
  * }
  */
 export function useTruncate() {
-  const { expanded, isTruncated, toggle } = useTruncateContext()
-  return { expanded, isTruncated, toggle }
+  const { expanded, isTruncated, lines, toggle } = useTruncateContext()
+  return { expanded, isTruncated, lines, toggle }
 }

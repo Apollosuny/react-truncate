@@ -15,12 +15,13 @@ Unlike CSS `-webkit-line-clamp`, this library uses `canvas.measureText()` and bi
 
 - **Pixel-accurate** — `canvas.measureText()` + binary search, not CSS hacks
 - **Responsive** — `ResizeObserver` recalculates on every container resize
-- **Inline toggle** — place "see more" at the end of the last line, like Facebook
+- **Inline toggle** — place "see more" _and_ "see less" at the end of the last line, like Facebook
 - **Unstyled** — zero CSS shipped; style with `className`, Tailwind, CSS Modules, anything
 - **Composable** — compound component API (`<Truncate.Content>`, `<Truncate.Toggle>`)
 - **`asChild`** — render the toggle as any element via Radix Slot
 - **Controlled + uncontrolled** — `expanded` / `defaultExpanded` / `onExpandedChange`
-- **Accessible** — `aria-expanded`, `aria-controls` wired automatically
+- **Accessible** — `aria-expanded` / `aria-controls` wired automatically, and the **full text stays readable by screen readers** while visually clipped
+- **Font-aware** — re-measures after web fonts load, so the cutoff doesn't drift
 - **SSR-safe** — no DOM access at module level
 - **TypeScript** — full type definitions included
 
@@ -55,18 +56,23 @@ export function Post({ body }: { body: string }) {
             See more
           </button>
         )}
+        less={(toggle) => (
+          <button onClick={toggle} className="font-semibold text-blue-600">
+            See less
+          </button>
+        )}
       >
         {body}
       </Truncate.Content>
-
-      {/* Only visible when expanded */}
-      <Truncate.Toggle className="mt-1 font-semibold text-blue-600">
-        {({ expanded }) => (expanded ? "See less" : null)}
-      </Truncate.Toggle>
     </Truncate>
   );
 }
 ```
+
+> `more` sits inline at the end of the last clipped line; `less` sits inline at
+> the end of the full text once expanded. Prefer these over `<Truncate.Toggle>`
+> when you want the control on the same line as the text. Use `<Truncate.Toggle>`
+> when you want a separate, block-level control instead.
 
 ---
 
@@ -93,24 +99,30 @@ The text container. Renders a block `<span>`.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `children` | `string` | **required** | Plain string to truncate |
+| `children` | `string` | **required** | Plain string to truncate (see note below) |
 | `ellipsis` | `ReactNode` | `"... "` | Rendered before `more` at the cutoff point |
 | `more` | `(toggle: () => void) => ReactNode` | — | Inline element placed at the end of the last truncated line |
+| `less` | `(toggle: () => void) => ReactNode` | — | Inline element placed at the end of the full text once expanded |
 
 Accepts all `<span>` props.
+
+> **Plain text only.** `children` must be a string — measurement is done with
+> `canvas.measureText()`, which can't measure arbitrary JSX. For rich content
+> (links, mentions, emoji rendered as nodes), this library is not the right fit.
 
 ---
 
 ### `<Truncate.Toggle>`
 
-Button rendered outside the truncated text. Hidden automatically when text is not truncated and not expanded.
+A separate, block-level control rendered outside the truncated text. Hidden automatically when the text is not truncated and not expanded. For an _inline_ control, use the `more` / `less` props on `<Truncate.Content>` instead.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `children` | `ReactNode \| (state: { expanded: boolean }) => ReactNode` | **required** | Label or render-prop |
 | `asChild` | `boolean` | `false` | Merges props onto the child element instead of rendering a `<button>` |
+| `contentId` | `string` | — | Override the `aria-controls` target. Defaults to the `<Truncate.Content>` id automatically |
 
-Sets `aria-expanded` and `aria-controls` automatically.
+Sets `aria-expanded` and `aria-controls` automatically — `aria-controls` points at the `<Truncate.Content>` region by default, with no wiring required.
 
 ---
 
@@ -139,9 +151,33 @@ function CustomBadge() {
 
 ## Patterns
 
-### Facebook-style — inline "See more"
+### Facebook-style — inline "See more" / "See less"
 
-The `more` prop places a clickable element at the end of the last visible line. `Truncate.Toggle` renders "See less" after expanding.
+The `more` prop places a clickable element at the end of the last clipped line; `less` places one at the end of the full text once expanded. Both stay on the same line as the text.
+
+```tsx
+<Truncate lines={3}>
+  <Truncate.Content
+    ellipsis="... "
+    more={(toggle) => (
+      <button onClick={toggle} className="font-semibold text-blue-600">
+        See more
+      </button>
+    )}
+    less={(toggle) => (
+      <button onClick={toggle} className="font-semibold text-blue-600">
+        See less
+      </button>
+    )}
+  >
+    {text}
+  </Truncate.Content>
+</Truncate>
+```
+
+### Block-level toggle below the text
+
+Use `<Truncate.Toggle>` when you want the control on its own line instead of inline. It renders a `<button>` (or any element via `asChild`) and wires up `aria-expanded` / `aria-controls` automatically.
 
 ```tsx
 <Truncate lines={3}>
@@ -269,9 +305,20 @@ const [open, setOpen] = useState(false);
 3. A hidden `<canvas>` runs `measureText()` to determine character widths, with a manual correction for `letter-spacing` (which the Canvas API ignores).
 4. For each line up to `lines - 1`, a binary search over words finds the last word that fits.
 5. On the final line, a binary search over characters finds the exact cutoff point, leaving room for `ellipsis` and `more`.
-6. When the container resizes, steps 1–5 repeat automatically.
+6. When the container resizes — or when web fonts finish loading — steps 1–5 repeat automatically.
 
 This approach is accurate across any font, size, or container width — unlike `-webkit-line-clamp`, which produces slightly wrong results near the breakpoint and cannot accommodate an inline toggle element.
+
+---
+
+## Accessibility
+
+- **Full text for screen readers.** While collapsed, the visible text is a clipped fragment of a sentence. That fragment is hidden from assistive tech (`aria-hidden`), and the **complete text** is exposed via a visually-hidden copy — so screen-reader users get the whole content, not a cut-off phrase.
+- **Focusable controls stay announced.** The inline `more` / `less` toggle is rendered outside the `aria-hidden` region, so it remains reachable by keyboard and screen readers.
+- **Wired disclosure semantics.** `<Truncate.Toggle>` sets `aria-expanded` and points `aria-controls` at the `<Truncate.Content>` region automatically.
+- **Zero CSS dependency.** The visually-hidden styles are inlined; you don't need a global `.sr-only` utility.
+
+> If you wire up an inline `more` / `less` button yourself, add `aria-expanded={expanded}` to it for full disclosure semantics. `<Truncate.Toggle>` does this for you.
 
 ---
 

@@ -31,7 +31,7 @@ export function TruncateToggle({
   contentId,
   ...props
 }: TruncateToggleProps) {
-  const { expanded, isTruncated, toggle } = useTruncateContext()
+  const { expanded, isTruncated, toggle, contentId: ctxContentId } = useTruncateContext()
 
   // Hide when there is nothing to toggle
   if (!isTruncated && !expanded) return null
@@ -43,7 +43,7 @@ export function TruncateToggle({
     <Comp
       type={asChild ? undefined : 'button'}
       aria-expanded={expanded}
-      aria-controls={contentId}
+      aria-controls={contentId ?? ctxContentId}
       onClick={toggle}
       {...props}
     >

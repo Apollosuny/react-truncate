@@ -39,6 +39,20 @@ function cx(...args: (string | undefined | null | false)[]) {
   return args.filter(Boolean).join(' ')
 }
 
+// Visually hidden but readable by assistive tech. Inlined so the library keeps
+// its zero-CSS promise (no dependency on a consumer `.sr-only` utility).
+const srOnly: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  borderWidth: 0,
+}
+
 export function TruncateContent({
   children: text,
   ellipsis = '... ',
@@ -47,7 +61,8 @@ export function TruncateContent({
   className,
   ...props
 }: TruncateContentProps) {
-  const { expanded, lines, toggle, setIsTruncated } = useTruncateContext()
+  const { expanded, isTruncated, lines, toggle, setIsTruncated, contentId } =
+    useTruncateContext()
 
   const containerRef = useRef<HTMLSpanElement>(null)
   const ellipsisRef = useRef<HTMLSpanElement>(null)
@@ -94,7 +109,21 @@ export function TruncateContent({
     if (!el) return
     const ro = new ResizeObserver(calcTargetWidth)
     ro.observe(el)
-    return () => ro.disconnect()
+
+    // Web fonts can resolve after the first measurement, which would change
+    // glyph metrics and shift the cutoff. Re-measure once they're ready.
+    let cancelled = false
+    const fonts = typeof document !== 'undefined' ? document.fonts : undefined
+    fonts?.ready
+      .then(() => {
+        if (!cancelled) calcTargetWidth()
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+      ro.disconnect()
+    }
   }, [calcTargetWidth, text])
 
   // Measure text width via canvas + letter-spacing compensation
@@ -152,7 +181,6 @@ export function TruncateContent({
           <span key={line}>
             {clipped}
             {ellipsis}
-            {more?.(toggle)}
           </span>
         )
       } else {
@@ -186,12 +214,31 @@ export function TruncateContent({
       prevIsTruncatedRef.current = didTruncate
       setIsTruncated(didTruncate)
     }
-  }, [targetWidth, text, lines, expanded, measureWidth, ellipsis, more, toggle, setIsTruncated])
+    // `more` is intentionally excluded: it's rendered outside the measured
+    // lines now, and consumers pass a fresh closure each render. The combined
+    // ellipsis + more width is still measured live from the DOM via `ellipsisRef`.
+  }, [targetWidth, text, lines, expanded, measureWidth, ellipsis, setIsTruncated])
+
+  // Visible truncated lines, joined inline with <br> so the toggle can sit at
+  // the end of the last line instead of dropping to a new row.
+  const lineRun = renderedLines.map((node, i, arr) =>
+    i === arr.length - 1 ? (
+      node
+    ) : (
+      <span key={`wrap-${i}`}>
+        {node}
+        <br />
+      </span>
+    )
+  )
+
+  const measured = targetWidth > 0 && renderedLines.length > 0
 
   // ── Render ─────────────────────────────────────────────────────────
   return (
     <span
       ref={containerRef}
+      id={contentId}
       className={cx('block', className)}
       style={{ display: 'block' }}
       {...props}
@@ -208,20 +255,22 @@ export function TruncateContent({
         </>
       ) : (
         <>
-          <span style={{ display: 'block' }}>
-            {targetWidth > 0
-              ? renderedLines.map((node, i, arr) =>
-                  i === arr.length - 1 ? (
-                    node
-                  ) : (
-                    <span key={`wrap-${i}`}>
-                      {node}
-                      <br />
-                    </span>
-                  )
-                )
-              : text}
-          </span>
+          {measured && isTruncated ? (
+            <>
+              {/*
+               * Full text for assistive tech. The visible clipped fragment
+               * below is a broken sentence, so it's hidden from the a11y tree
+               * and the complete text is exposed here instead.
+               */}
+              <span style={srOnly}>{text}</span>
+              <span aria-hidden="true">{lineRun}</span>
+              {/* Inline toggle — kept outside the aria-hidden fragment so it
+                  remains focusable and announced. */}
+              {more?.(toggle)}
+            </>
+          ) : (
+            <span style={{ display: 'block' }}>{measured ? lineRun : text}</span>
+          )}
 
           {/*
            * Off-screen span used to measure the combined width of
