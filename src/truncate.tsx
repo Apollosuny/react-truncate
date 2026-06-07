@@ -12,6 +12,16 @@ export interface TruncateProps extends React.HTMLAttributes<HTMLDivElement> {
   defaultExpanded?: boolean
   /** Called when the expanded state changes. */
   onExpandedChange?: (expanded: boolean) => void
+  /**
+   * Shorthand mode: when `children` is a plain string, the root renders a
+   * `<Truncate.Content>` for you and forwards this `ellipsis`. Ignored when you
+   * pass `<Truncate.Content>` / `<Truncate.Toggle>` children explicitly.
+   */
+  ellipsis?: React.ReactNode
+  /** Shorthand-mode `moreLabel`, forwarded to the auto-rendered content. */
+  moreLabel?: React.ReactNode
+  /** Shorthand-mode `lessLabel`, forwarded to the auto-rendered content. */
+  lessLabel?: React.ReactNode
 }
 
 function TruncateRoot({
@@ -20,6 +30,9 @@ function TruncateRoot({
   expanded: controlledExpanded,
   defaultExpanded = false,
   onExpandedChange,
+  ellipsis,
+  moreLabel,
+  lessLabel,
   ...props
 }: TruncateProps) {
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded)
@@ -44,10 +57,22 @@ function TruncateRoot({
     contentId,
   }
 
+  // Shorthand: a bare string child becomes a `<Truncate.Content>` so the
+  // simplest case is a one-liner. Element children (the compound API) pass
+  // through untouched.
+  const content =
+    typeof children === 'string' ? (
+      <TruncateContent ellipsis={ellipsis} moreLabel={moreLabel} lessLabel={lessLabel}>
+        {children}
+      </TruncateContent>
+    ) : (
+      children
+    )
+
   return (
     <TruncateContext.Provider value={ctx}>
       <div data-state={expanded ? 'expanded' : 'truncated'} {...props}>
-        {children}
+        {content}
       </div>
     </TruncateContext.Provider>
   )
@@ -57,6 +82,13 @@ function TruncateRoot({
  * Root component. Provides context to `Truncate.Content` and `Truncate.Toggle`.
  *
  * @example
+ * // Shorthand — string child + labels
+ * <Truncate lines={3} moreLabel="See more" lessLabel="See less">
+ *   {longText}
+ * </Truncate>
+ *
+ * @example
+ * // Compound API — full control
  * <Truncate lines={3}>
  *   <Truncate.Content ellipsis="... ">
  *     {longText}

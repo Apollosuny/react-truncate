@@ -46,6 +46,8 @@ jobs:
           test -f dist/index.mjs
           test -f dist/index.d.ts
           test -f dist/index.d.mts
+          head -1 dist/index.js  | grep -q '"use client"'
+          head -1 dist/index.mjs | grep -q '"use client"'
 
       - name: Publish with provenance
         run: npm publish --access public --provenance

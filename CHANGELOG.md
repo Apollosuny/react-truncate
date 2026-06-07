@@ -11,6 +11,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.3.0] — 2026-06-07
+
+### Added
+- **Simple mode** — `moreLabel` / `lessLabel` on `<Truncate.Content>` render a default, accessible inline `<button data-truncate="toggle">` (wired with `onClick`, `aria-expanded`, `aria-controls`), so the common case no longer needs a render-prop. Explicit `more` / `less` still take precedence
+- **String shorthand** — `<Truncate>` now accepts a plain string child and auto-renders a `<Truncate.Content>`, forwarding `ellipsis` / `moreLabel` / `lessLabel`. The compound API is unchanged when element children are passed
+- **`"use client"` directive** — emitted on both bundles so the component drops into a Next.js App Router server component without a manual client wrapper
+
+### Changed
+- Dev-only `console.warn` when `<Truncate.Content>` receives a non-string child, pointing to JSX-capable alternatives (stripped from production builds)
+- README: added "vs CSS `line-clamp`" and "vs JSX-truncating libraries" comparison sections
+
+---
+
 ## [0.2.0] — 2026-06-06
 
 ### Added
@@ -42,6 +55,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - SSR-safe via `useIsomorphicLayoutEffect`
 - React 18 and 19 peer dependency support
 
-[Unreleased]: https://github.com/apollosuny/react-truncate/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/apollosuny/react-truncate/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/apollosuny/react-truncate/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/apollosuny/react-truncate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/apollosuny/react-truncate/releases/tag/v0.1.0

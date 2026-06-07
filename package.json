@@ -1,6 +1,6 @@
 {
   "name": "@apollosuny/react-truncate",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A modern, pixel-accurate React text truncation component with show more/less toggle",
   "keywords": [
     "react",
@@ -69,6 +69,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^25.9.2",
     "@types/react": "^19.1.4",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^3.2.4",
