@@ -70,7 +70,7 @@
     "@types/react": "^19.1.4",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^3.2.4",
-    "jsdom": "^26.1.0",
+    "jsdom": "^29.1.1",
     "react": "^19.1.0",
     "storybook": "^8.6.18",
     "tsup": "^8.5.0",
