@@ -31,6 +31,17 @@ export interface TruncateContentProps extends React.HTMLAttributes<HTMLSpanEleme
    * )}
    */
   less?: (toggle: () => void) => React.ReactNode
+  /**
+   * Shorthand for `more`: renders a default, accessible inline `<button>` with
+   * this label (wires `onClick`, `aria-expanded`, `aria-controls` for you).
+   * Ignored when `more` is provided. Style it via `[data-truncate="toggle"]`.
+   */
+  moreLabel?: React.ReactNode
+  /**
+   * Shorthand for `less`, mirroring {@link moreLabel}. Ignored when `less` is
+   * provided.
+   */
+  lessLabel?: React.ReactNode
 }
 
 type LineNode = React.ReactElement | string
@@ -53,16 +64,76 @@ const srOnly: React.CSSProperties = {
   borderWidth: 0,
 }
 
+// Minimal reset for the default `moreLabel` / `lessLabel` button so it reads as
+// inline text, not a chrome button. Consumers target `[data-truncate="toggle"]`
+// for their own styling — we keep the library's zero-CSS promise.
+const defaultToggleStyle: React.CSSProperties = {
+  background: 'none',
+  border: 0,
+  padding: 0,
+  font: 'inherit',
+  color: 'inherit',
+  cursor: 'pointer',
+}
+
+function renderDefaultToggle(
+  label: React.ReactNode,
+  expanded: boolean,
+  contentId: string,
+  toggle: () => void
+) {
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-expanded={expanded}
+      aria-controls={contentId}
+      data-truncate="toggle"
+      style={defaultToggleStyle}
+    >
+      {label}
+    </button>
+  )
+}
+
 export function TruncateContent({
   children: text,
   ellipsis = '... ',
   more,
   less,
+  moreLabel,
+  lessLabel,
   className,
   ...props
 }: TruncateContentProps) {
   const { expanded, isTruncated, lines, toggle, setIsTruncated, contentId } =
     useTruncateContext()
+
+  // Dev-only guard: measurement is canvas-based and only works on strings.
+  // Passing JSX silently produces wrong output (or throws on `.split`), so warn
+  // once with a pointer to JSX-capable alternatives. Stripped in production.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && typeof text !== 'string') {
+      console.warn(
+        '[react-truncate] <Truncate.Content> expects a plain string child; ' +
+          `received ${typeof text}. Canvas measurement cannot handle JSX. ` +
+          'For rich markup, use react-truncate-markup or @re-dev/react-truncate.'
+      )
+    }
+  }, [text])
+
+  // Labels are sugar over the render-prop form; an explicit `more`/`less`
+  // always wins. The default button wires aria/focus correctly for you.
+  const resolvedMore =
+    more ??
+    (moreLabel != null
+      ? (t: () => void) => renderDefaultToggle(moreLabel, false, contentId, t)
+      : undefined)
+  const resolvedLess =
+    less ??
+    (lessLabel != null
+      ? (t: () => void) => renderDefaultToggle(lessLabel, true, contentId, t)
+      : undefined)
 
   const containerRef = useRef<HTMLSpanElement>(null)
   const ellipsisRef = useRef<HTMLSpanElement>(null)
@@ -246,10 +317,10 @@ export function TruncateContent({
       {expanded ? (
         <>
           {text}
-          {less && (
+          {resolvedLess && (
             <>
               {' '}
-              {less(toggle)}
+              {resolvedLess(toggle)}
             </>
           )}
         </>
@@ -266,7 +337,7 @@ export function TruncateContent({
               <span aria-hidden="true">{lineRun}</span>
               {/* Inline toggle — kept outside the aria-hidden fragment so it
                   remains focusable and announced. */}
-              {more?.(toggle)}
+              {resolvedMore?.(toggle)}
             </>
           ) : (
             <span style={{ display: 'block' }}>{measured ? lineRun : text}</span>
@@ -291,7 +362,7 @@ export function TruncateContent({
           >
             <span ref={ellipsisRef} style={{ display: 'inline-block' }}>
               {ellipsis}
-              {more?.(toggle)}
+              {resolvedMore?.(toggle)}
             </span>
           </span>
         </>

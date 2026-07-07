@@ -197,6 +197,116 @@ describe('Truncate.Content', () => {
   })
 })
 
+// ─── Simple mode: moreLabel / lessLabel + string shorthand ─────────────────────
+
+function visibleToggles(container: HTMLElement) {
+  return Array.from(
+    container.querySelectorAll('[data-truncate="toggle"]')
+  ).filter((el) => el.closest('[aria-hidden="true"]') === null) as HTMLElement[]
+}
+
+describe('simple mode (labels + shorthand)', () => {
+  it('renders a default accessible button from moreLabel when truncated', () => {
+    mockCanvas()
+    mockWidth(300)
+    const { container } = render(
+      <Truncate lines={2}>
+        <Truncate.Content moreLabel="See more">{LONG}</Truncate.Content>
+      </Truncate>
+    )
+    const [btn] = visibleToggles(container)
+    expect(btn).toBeTruthy()
+    expect(btn.tagName).toBe('BUTTON')
+    expect(btn.getAttribute('type')).toBe('button')
+    expect(btn.getAttribute('aria-expanded')).toBe('false')
+    expect(btn.getAttribute('aria-controls')).toBeTruthy()
+    expect(btn.textContent).toBe('See more')
+  })
+
+  it('toggles to expanded and shows lessLabel when the default more button is clicked', () => {
+    mockCanvas()
+    mockWidth(300)
+    const { container } = render(
+      <Truncate lines={2}>
+        <Truncate.Content moreLabel="See more" lessLabel="See less">
+          {LONG}
+        </Truncate.Content>
+      </Truncate>
+    )
+    const root = container.firstChild as HTMLElement
+    fireEvent.click(visibleToggles(container)[0])
+    expect(root.dataset.state).toBe('expanded')
+    const [lessBtn] = visibleToggles(container)
+    expect(lessBtn.textContent).toBe('See less')
+    expect(lessBtn.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('lets an explicit `more` render-prop win over moreLabel', () => {
+    mockCanvas()
+    mockWidth(300)
+    const { container } = render(
+      <Truncate lines={2}>
+        <Truncate.Content
+          moreLabel="ignored"
+          more={(toggle) => (
+            <button data-testid="custom-more" onClick={toggle}>
+              custom
+            </button>
+          )}
+        >
+          {LONG}
+        </Truncate.Content>
+      </Truncate>
+    )
+    expect(visibleToggles(container)).toHaveLength(0)
+    expect(screen.getAllByTestId('custom-more').length).toBeGreaterThan(0)
+  })
+
+  it('string child renders a Truncate.Content via shorthand', () => {
+    const { getByText } = render(
+      <Truncate lines={2} expanded={true}>
+        {SHORT}
+      </Truncate>
+    )
+    expect(getByText(SHORT)).toBeTruthy()
+  })
+
+  it('forwards moreLabel through the string shorthand', () => {
+    mockCanvas()
+    mockWidth(300)
+    const { container } = render(
+      <Truncate lines={2} moreLabel="More">
+        {LONG}
+      </Truncate>
+    )
+    const [btn] = visibleToggles(container)
+    expect(btn).toBeTruthy()
+    expect(btn.textContent).toBe('More')
+  })
+
+  it('still renders compound children untouched (no shorthand wrapping)', () => {
+    const { getByTestId } = render(
+      <Truncate lines={2} expanded={true}>
+        <Truncate.Content data-testid="explicit-content">{SHORT}</Truncate.Content>
+      </Truncate>
+    )
+    expect(getByTestId('explicit-content')).toBeTruthy()
+  })
+
+  it('warns in dev when children is not a string', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <Truncate lines={2} expanded={true}>
+        <Truncate.Content>{123 as unknown as string}</Truncate.Content>
+      </Truncate>
+    )
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('expects a plain string child')
+    )
+    warn.mockRestore()
+  })
+})
+
 // ─── TruncateToggle ───────────────────────────────────────────────────────────
 
 describe('Truncate.Toggle', () => {

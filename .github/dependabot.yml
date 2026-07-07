@@ -1,0 +1,47 @@
+version: 2
+updates:
+  # ── npm dependencies ─────────────────────────────────────────────────────────
+  # Keeps runtime and dev dependencies patched against disclosed CVEs. Updates
+  # are grouped to avoid a flood of individual PRs; security fixes still open
+  # promptly because Dependabot bypasses the schedule for vulnerability alerts.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    groups:
+      production:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      development:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
+  # Pinned action versions (actions/checkout@v4, etc.) are a supply-chain
+  # surface. Dependabot bumps them as new releases land, so pinning stays
+  # current without manual review of every action.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      actions:
+        patterns:
+          - "*"

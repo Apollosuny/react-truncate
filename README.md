@@ -22,7 +22,7 @@ Unlike CSS `-webkit-line-clamp`, this library uses `canvas.measureText()` and bi
 - **Controlled + uncontrolled** — `expanded` / `defaultExpanded` / `onExpandedChange`
 - **Accessible** — `aria-expanded` / `aria-controls` wired automatically, and the **full text stays readable by screen readers** while visually clipped
 - **Font-aware** — re-measures after web fonts load, so the cutoff doesn't drift
-- **SSR-safe** — no DOM access at module level
+- **RSC-ready** — ships a `"use client"` directive, so it drops straight into a Next.js App Router server component with no wrapper, and still SSRs to HTML
 - **TypeScript** — full type definitions included
 
 ---
@@ -42,6 +42,27 @@ yarn add @apollosuny/react-truncate
 ---
 
 ## Quick Start
+
+The simplest form — a string child plus `moreLabel` / `lessLabel`. The library
+renders accessible inline buttons for you (wired with `aria-expanded` /
+`aria-controls`):
+
+```tsx
+import { Truncate } from "@apollosuny/react-truncate";
+
+export function Post({ body }: { body: string }) {
+  return (
+    <Truncate lines={3} moreLabel="See more" lessLabel="See less">
+      {body}
+    </Truncate>
+  );
+}
+```
+
+Style the generated buttons via the `[data-truncate="toggle"]` attribute (the
+library ships zero CSS otherwise).
+
+Need full control over the markup and placement? Use the compound API:
 
 ```tsx
 import { Truncate } from "@apollosuny/react-truncate";
@@ -88,8 +109,17 @@ Root provider. Renders a `<div>` by default.
 | `expanded` | `boolean` | — | Controlled expanded state |
 | `defaultExpanded` | `boolean` | `false` | Initial state (uncontrolled) |
 | `onExpandedChange` | `(expanded: boolean) => void` | — | Fired on every toggle |
+| `ellipsis` | `ReactNode` | `"... "` | **Shorthand mode only** — forwarded to the auto-rendered `Content` |
+| `moreLabel` | `ReactNode` | — | **Shorthand mode only** — see `<Truncate.Content>` |
+| `lessLabel` | `ReactNode` | — | **Shorthand mode only** — see `<Truncate.Content>` |
 
 Accepts all `<div>` props. Exposes `data-state="truncated"` or `data-state="expanded"` for CSS targeting.
+
+> **Shorthand mode.** When `children` is a plain string, the root renders a
+> `<Truncate.Content>` for you and forwards `ellipsis` / `moreLabel` /
+> `lessLabel`. Pass `<Truncate.Content>` / `<Truncate.Toggle>` children
+> explicitly to opt into the full compound API instead (these props are ignored
+> then).
 
 ---
 
@@ -103,8 +133,15 @@ The text container. Renders a block `<span>`.
 | `ellipsis` | `ReactNode` | `"... "` | Rendered before `more` at the cutoff point |
 | `more` | `(toggle: () => void) => ReactNode` | — | Inline element placed at the end of the last truncated line |
 | `less` | `(toggle: () => void) => ReactNode` | — | Inline element placed at the end of the full text once expanded |
+| `moreLabel` | `ReactNode` | — | Shorthand for `more`: renders a default accessible inline `<button>`. Ignored when `more` is set |
+| `lessLabel` | `ReactNode` | — | Shorthand for `less`. Ignored when `less` is set |
 
 Accepts all `<span>` props.
+
+> **Labels vs render-props.** `moreLabel` / `lessLabel` render a default
+> `<button data-truncate="toggle">` with `onClick`, `aria-expanded`, and
+> `aria-controls` wired automatically — the zero-config path. Use `more` /
+> `less` when you need custom markup; they take precedence over the labels.
 
 > **Plain text only.** `children` must be a string — measurement is done with
 > `canvas.measureText()`, which can't measure arbitrary JSX. For rich content
@@ -297,6 +334,36 @@ const [open, setOpen] = useState(false);
 ```
 
 ---
+
+## Comparison
+
+### vs CSS `line-clamp` / `-webkit-line-clamp`
+
+CSS line clamping is the right default when you only need to cap lines with a
+trailing `…`. Reach for this library when that isn't enough:
+
+| | CSS `line-clamp` | This library |
+|---|---|---|
+| Standardization | Unprefixed form still a Working Draft; only `-webkit-line-clamp` resolves everywhere (not Baseline) | JS, works wherever `Canvas` + `ResizeObserver` do (≈ every browser since 2020) |
+| Inline "see more" at the exact cutoff | ✗ (clamps text only; no room for a trailing control on the same line) | ✓ |
+| Cutoff accuracy | Approximate near the boundary | Pixel-accurate (`measureText` + binary search) |
+| `isTruncated` detection | ✗ | ✓ via `useTruncate()` |
+| Custom ellipsis node | ✗ | ✓ |
+| Cost | Zero JS | Measurement runs on the client |
+
+If you don't need the inline toggle, exact cutoff, or truncation detection,
+plain CSS is lighter — use it.
+
+### vs JSX-truncating libraries (`react-truncate-markup`, `@re-dev/react-truncate`)
+
+Those measure rendered DOM, so they can truncate **arbitrary JSX** (links,
+mentions, badges). This library measures with `canvas.measureText()`, which is
+faster and pixel-exact but **plain-string only**. Choose based on content:
+
+- **Rich/JSX content** (inline links, formatted spans) → use a DOM-measuring
+  library.
+- **Plain text** (post bodies, descriptions, comments) with an exact inline
+  toggle and zero-CSS styling → this library.
 
 ## How it works
 
