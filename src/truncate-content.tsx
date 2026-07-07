@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTruncateContext } from './context'
+import { toGraphemes } from './graphemes'
 import { useIsomorphicLayoutEffect } from './hooks/use-isomorphic-layout-effect'
 
 export interface TruncateContentProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -234,20 +235,25 @@ export function TruncateContent({
       }
 
       if (line === lines) {
-        // Last visible line — binary search by character
+        // Last visible line — binary search by grapheme cluster so the cut
+        // never lands inside an emoji / flag / combining sequence.
+        const graphemes = toGraphemes(fullLineText)
         let lo = 0
-        let hi = fullLineText.length - 1
+        let hi = graphemes.length - 1
 
         while (lo <= hi) {
           const mid = Math.floor((lo + hi) / 2)
-          if (measureWidth(fullLineText.slice(0, mid + 1)) + ellipsisW <= targetWidth) {
+          if (
+            measureWidth(graphemes.slice(0, mid + 1).join('')) + ellipsisW <=
+            targetWidth
+          ) {
             lo = mid + 1
           } else {
             hi = mid - 1
           }
         }
 
-        const clipped = fullLineText.slice(0, lo).replace(/\s+$/, '')
+        const clipped = graphemes.slice(0, lo).join('').replace(/\s+$/, '')
         result.push(
           <span key={line}>
             {clipped}

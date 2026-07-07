@@ -58,9 +58,6 @@
       "optional": true
     }
   },
-  "dependencies": {
-    "@radix-ui/react-slot": "^1.2.3"
-  },
   "devDependencies": {
     "@storybook/addon-essentials": "^8.6.18",
     "@storybook/blocks": "^8.6.14",

@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { Truncate } from '../truncate'
 import { useTruncate } from '../use-truncate'
+import { toGraphemes } from '../graphemes'
 
 const SHORT = 'Short text.'
 // 8px per char × ~400 chars → exceeds any reasonable container width
@@ -464,6 +465,144 @@ describe('accessibility', () => {
       .getAllByTestId('inline-more')
       .filter((el) => el.closest('[aria-hidden="true"]') === null)
     expect(visible).toHaveLength(1)
+  })
+})
+
+// ─── Grapheme-safe truncation ─────────────────────────────────────────────────
+
+function hasLoneSurrogate(s: string): boolean {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i)
+    if (c >= 0xd800 && c <= 0xdbff) {
+      const next = s.charCodeAt(i + 1)
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return true
+      i++
+    } else if (c >= 0xdc00 && c <= 0xdfff) {
+      return true
+    }
+  }
+  return false
+}
+
+// Make the off-screen ellipsis-measurement span report ~0 width so the last
+// visible line actually fills to `width` and the cut point is exercised.
+function mockLayout(width = 300) {
+  Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+    configurable: true,
+    value: function (this: HTMLElement) {
+      let el: HTMLElement | null = this
+      while (el) {
+        if (el.style && el.style.left === '-9999px') {
+          return { width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON: () => ({}) }
+        }
+        el = el.parentElement
+      }
+      return { width, height: 0, top: 0, left: 0, right: width, bottom: 0, x: 0, y: 0, toJSON: () => ({}) }
+    },
+  })
+}
+
+describe('toGraphemes', () => {
+  it('keeps plain ASCII one entry per character', () => {
+    expect(toGraphemes('abc')).toEqual(['a', 'b', 'c'])
+  })
+
+  it('treats an astral-plane emoji as a single grapheme', () => {
+    // Old code sliced by code unit ('😀'.length === 2) and could split it.
+    expect('😀'.length).toBe(2)
+    expect(toGraphemes('😀')).toEqual(['😀'])
+  })
+
+  it('keeps flags, ZWJ sequences and combining marks intact', () => {
+    expect(toGraphemes('🇻🇳')).toHaveLength(1)
+    expect(toGraphemes('👨‍👩‍👧')).toHaveLength(1)
+    const combining = 'e\u0301' // base + combining acute accent = one grapheme
+    expect(toGraphemes(combining)).toHaveLength(1)
+    expect(toGraphemes(combining).join('')).toBe(combining)
+  })
+
+  it('reconstructs the original string when joined', () => {
+    const s = 'a😀b🇻🇳c👨‍👩‍👧d'
+    expect(toGraphemes(s).join('')).toBe(s)
+  })
+})
+
+describe('emoji truncation', () => {
+  const EMOJI = 'Hello 😀 world 🇻🇳 family 👨‍👩‍👧 here we go again '.repeat(3)
+
+  it('never leaks a split emoji into the visible fragment', () => {
+    mockCanvas()
+    mockLayout(300)
+    render(
+      <Truncate lines={2}>
+        <Truncate.Content>{EMOJI}</Truncate.Content>
+      </Truncate>
+    )
+    const hidden = document.querySelector('[aria-hidden="true"]')
+    expect(hasLoneSurrogate(hidden?.textContent ?? '')).toBe(false)
+  })
+
+  it('still exposes the full text to assistive tech', () => {
+    mockCanvas()
+    mockLayout(300)
+    render(
+      <Truncate lines={2}>
+        <Truncate.Content>{EMOJI}</Truncate.Content>
+      </Truncate>
+    )
+    expect(document.body.textContent).toContain(EMOJI.trim())
+  })
+})
+
+// ─── asChild slot (zero-dep replacement for @radix-ui/react-slot) ──────────────
+
+describe('asChild slot', () => {
+  it('renders as the child element and injects aria/behaviour props', () => {
+    mockCanvas()
+    mockWidth(300)
+    render(
+      <Truncate lines={3} defaultExpanded={true}>
+        <Truncate.Content>{LONG}</Truncate.Content>
+        <Truncate.Toggle asChild>
+          {({ expanded }) => (
+            <a href="#target" data-testid="slot-anchor">
+              {expanded ? 'Less' : 'More'}
+            </a>
+          )}
+        </Truncate.Toggle>
+      </Truncate>
+    )
+    const anchor = screen.getByTestId('slot-anchor')
+    expect(anchor.tagName).toBe('A')
+    // child prop preserved
+    expect(anchor.getAttribute('href')).toBe('#target')
+    // slot prop injected
+    expect(anchor.getAttribute('aria-expanded')).toBe('true')
+    expect(anchor.getAttribute('aria-controls')).toBeTruthy()
+  })
+
+  it('composes the child onClick with the toggle handler', () => {
+    mockCanvas()
+    mockWidth(300)
+    const childClick = vi.fn()
+    const { container } = render(
+      <Truncate lines={3} defaultExpanded={true}>
+        <Truncate.Content>{LONG}</Truncate.Content>
+        <Truncate.Toggle asChild>
+          {({ expanded }) => (
+            <a href="#" data-testid="slot-anchor" onClick={childClick}>
+              {expanded ? 'Less' : 'More'}
+            </a>
+          )}
+        </Truncate.Toggle>
+      </Truncate>
+    )
+    const root = container.firstChild as HTMLElement
+    expect(root.dataset.state).toBe('expanded')
+    fireEvent.click(screen.getByTestId('slot-anchor'))
+    // both handlers ran: child's spy fired AND the toggle collapsed the root
+    expect(childClick).toHaveBeenCalledTimes(1)
+    expect(root.dataset.state).toBe('truncated')
   })
 })
 

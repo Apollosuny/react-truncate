@@ -18,7 +18,9 @@ Unlike CSS `-webkit-line-clamp`, this library uses `canvas.measureText()` and bi
 - **Inline toggle** — place "see more" _and_ "see less" at the end of the last line, like Facebook
 - **Unstyled** — zero CSS shipped; style with `className`, Tailwind, CSS Modules, anything
 - **Composable** — compound component API (`<Truncate.Content>`, `<Truncate.Toggle>`)
-- **`asChild`** — render the toggle as any element via Radix Slot
+- **`asChild`** — render the toggle as any element (e.g. `<a>`, a custom button) via a built-in slot
+- **Emoji-safe** — cuts on grapheme clusters (`Intl.Segmenter`), so emoji, flags, and combining marks are never split
+- **Zero dependencies** — no runtime dependencies; only a `react` peer
 - **Controlled + uncontrolled** — `expanded` / `defaultExpanded` / `onExpandedChange`
 - **Accessible** — `aria-expanded` / `aria-controls` wired automatically, and the **full text stays readable by screen readers** while visually clipped
 - **Font-aware** — re-measures after web fonts load, so the cutoff doesn't drift

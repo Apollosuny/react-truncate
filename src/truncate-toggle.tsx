@@ -1,5 +1,5 @@
 import React from 'react'
-import { Slot } from '@radix-ui/react-slot'
+import { Slot } from './slot'
 import { useTruncateContext } from './context'
 
 type RenderFn = (state: { expanded: boolean }) => React.ReactNode

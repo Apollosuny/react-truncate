@@ -11,14 +11,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [0.3.0] — 2026-06-07
+## [0.3.0] — 2026-07-07
 
 ### Added
 - **Simple mode** — `moreLabel` / `lessLabel` on `<Truncate.Content>` render a default, accessible inline `<button data-truncate="toggle">` (wired with `onClick`, `aria-expanded`, `aria-controls`), so the common case no longer needs a render-prop. Explicit `more` / `less` still take precedence
 - **String shorthand** — `<Truncate>` now accepts a plain string child and auto-renders a `<Truncate.Content>`, forwarding `ellipsis` / `moreLabel` / `lessLabel`. The compound API is unchanged when element children are passed
 - **`"use client"` directive** — emitted on both bundles so the component drops into a Next.js App Router server component without a manual client wrapper
 
+### Fixed
+- **Grapheme-safe truncation** — the last-line cut is now computed over grapheme clusters (via `Intl.Segmenter`, with a code-point fallback) instead of UTF-16 code units, so it never splits an emoji, regional-indicator flag, ZWJ sequence, or a base character + combining mark into a broken glyph
+
 ### Changed
+- **Zero runtime dependencies** — dropped `@radix-ui/react-slot`. The `asChild` behaviour is now backed by a minimal internal slot that merges props, composes event handlers, and concatenates `className` / `style`. No API change
 - Dev-only `console.warn` when `<Truncate.Content>` receives a non-string child, pointing to JSX-capable alternatives (stripped from production builds)
 - README: added "vs CSS `line-clamp`" and "vs JSX-truncating libraries" comparison sections
 
