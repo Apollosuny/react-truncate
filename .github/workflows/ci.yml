@@ -10,6 +10,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default: CI only needs to read the repository. Any job that
+# needs more should opt in explicitly at the job level.
+permissions:
+  contents: read
+
 jobs:
   lint-and-test:
     name: Typecheck & Test
