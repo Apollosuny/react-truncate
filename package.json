@@ -8,14 +8,28 @@
     "text",
     "ellipsis",
     "show more",
+    "show-more-text",
     "see more",
-    "clamp"
+    "read more",
+    "clamp",
+    "line-clamp",
+    "emoji",
+    "grapheme",
+    "rtl",
+    "accessible",
+    "app-router",
+    "server-component",
+    "zero-dependency"
   ],
   "license": "MIT",
   "author": "apollosuny",
+  "homepage": "https://react-truncate-alpha.vercel.app/",
   "repository": {
     "type": "git",
     "url": "https://github.com/apollosuny/react-truncate"
+  },
+  "bugs": {
+    "url": "https://github.com/apollosuny/react-truncate/issues"
   },
   "exports": {
     ".": {

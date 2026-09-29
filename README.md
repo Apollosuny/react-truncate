@@ -9,6 +9,8 @@ A pixel-accurate, responsive React text truncation component with inline "see mo
 
 Unlike CSS `-webkit-line-clamp`, this library uses `canvas.measureText()` and binary search to find the exact character cutoff at any container width, font, or letter-spacing — then re-runs automatically on resize.
 
+**[🔗 Live demo & interactive playground →](https://react-truncate-alpha.vercel.app/)**
+
 ---
 
 ## Features
