@@ -1,6 +1,6 @@
 {
   "name": "@apollosuny/react-truncate",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A modern, pixel-accurate React text truncation component with show more/less toggle",
   "keywords": [
     "react",

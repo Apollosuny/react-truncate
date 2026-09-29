@@ -11,6 +11,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.3.1] — 2026-09-29
+
+No runtime changes; the published bundle is functionally identical to 0.3.0.
+
+### Security
+- Updated development dependencies within their semver ranges, including `vitest` (>=3.2.6, fixes a critical advisory in the Vitest UI server). Production dependency audit remains clean and the package still has zero runtime dependencies
+- `SECURITY.md`: added GitHub private vulnerability reporting as the preferred reporting channel
+
+### Changed
+- CI: hardened the release and security workflows (least-privilege permissions, pinned actions, tag/version verification)
+- `package.json`: added `homepage`, `bugs` and additional discovery keywords
+
+---
+
 ## [0.3.0] — 2026-07-07
 
 ### Added
@@ -59,7 +73,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - SSR-safe via `useIsomorphicLayoutEffect`
 - React 18 and 19 peer dependency support
 
-[Unreleased]: https://github.com/apollosuny/react-truncate/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/apollosuny/react-truncate/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/apollosuny/react-truncate/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/apollosuny/react-truncate/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/apollosuny/react-truncate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/apollosuny/react-truncate/releases/tag/v0.1.0
