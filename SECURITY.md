@@ -11,7 +11,9 @@
 
 **Please do not open a public GitHub issue for security vulnerabilities.**
 
-Report security issues by email to **baotrung06092003@gmail.com** with the subject line:
+Preferred: use GitHub's [private vulnerability reporting](https://github.com/apollosuny/react-truncate/security/advisories/new).
+
+Alternatively, report by email to **baotrung06092003@gmail.com** with the subject line:
 
 ```
 [react-truncate] Security vulnerability report
@@ -26,7 +28,7 @@ You will receive a response within **72 hours**. Once the issue is confirmed, a 
 
 ## Scope
 
-This package is a client-side React component with no server-side execution, no network requests, and no persistence layer. The attack surface is limited to:
+This package is a React component with no runtime dependencies, no network requests, and no persistence layer. It is safe to render on the server (text measurement runs only in the browser). The attack surface is limited to:
 
 - Malicious content in the `children` (text) prop — rendered as text nodes, not HTML, so XSS via props is not possible
 - Supply chain attacks via compromised dependencies — mitigated by lockfile integrity checks and weekly automated audits (see [security workflow](.github/workflows/security.yml))

@@ -9,9 +9,9 @@ on:
     # Run every Monday at 08:00 UTC to catch newly disclosed CVEs
     - cron: "0 8 * * 1"
 
+# Least-privilege default; jobs that upload SARIF opt in at the job level.
 permissions:
   contents: read
-  security-events: write  # required to upload SARIF to GitHub Security tab
 
 jobs:
   # ── 1. Dependency audit ──────────────────────────────────────────────────────
@@ -35,15 +35,29 @@ jobs:
       # Gate on production dependencies only — these are the ones consumers
       # inherit when they install the package. devDependencies (vitest,
       # Storybook, etc.) never ship, so their advisories shouldn't block a
-      # release. Review dev-tooling advisories separately via a local
-      # `pnpm audit` rather than failing CI on them.
+      # release.
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=moderate
+
+      # Dev-tooling advisories still affect maintainer machines and CI, so
+      # surface them in the run summary without failing the build.
+      - name: Audit all dependencies (informational)
+        continue-on-error: true
+        run: |
+          {
+            echo '### pnpm audit (all dependencies)'
+            echo '```'
+            pnpm audit --audit-level=high || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 2. Static analysis (Semgrep) ────────────────────────────────────────────
   semgrep:
     name: Semgrep SAST
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # required to upload SARIF to GitHub Security tab
     container:
       image: semgrep/semgrep
     steps:
