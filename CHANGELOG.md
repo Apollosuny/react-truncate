@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+- `package.json`: rewrote `description` and expanded discovery keywords; removed the unverified `rtl` and misleading `server-component` keywords
+- README: added a comparison against other React truncation packages and a Limitations section
+
 ---
 
 ## [0.3.1] — 2026-09-29
