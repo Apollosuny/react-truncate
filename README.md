@@ -341,6 +341,30 @@ const [open, setOpen] = useState(false);
 
 ## Comparison
 
+### vs other React truncation packages
+
+Data from the npm registry, October 2026:
+
+| Package | React 19 in peer range | Runtime deps | Last publish |
+|---|---|---|---|
+| **@apollosuny/react-truncate** | ✓ | 0 | 2026 |
+| `react-truncate` | ✗ (`<= 16`) | 0 (+ `prop-types` peer) | 2022 |
+| `react-truncate-markup` | ✓ (`>=16.3`) | 4 | 2022 |
+| `react-text-truncate` | ✗ (`<= 18`) | 1 | 2022 |
+| `react-show-more-text` | ✗ (`16 – 18`) | 1 | 2026 |
+| `react-lines-ellipsis` | ✓ (`*`) | 0 | 2025 |
+| `@re-dev/react-truncate` | ✓ | 0 | 2026 |
+
+Where this library is different:
+
+- **Inline toggle at the exact cutoff.** "See more" sits on the last visible line, and "see less" sits at the end of the expanded text.
+- **Built for current React.** Supports React 18/19, ships a `"use client"` directive for the Next.js App Router, and ships ESM + CJS with types.
+- **Accessible by default.** Screen readers get the full text, and `aria-expanded` / `aria-controls` are wired for you.
+- **Grapheme-safe.** Emoji, flags and combining marks are never split.
+- **Headless.** Ships zero CSS and exposes `data-state` hooks for styling.
+
+The tradeoff is that content must be a **plain string**. To truncate JSX, see below.
+
 ### vs CSS `line-clamp` / `-webkit-line-clamp`
 
 CSS line clamping is the right default when you only need to cap lines with a
@@ -390,6 +414,14 @@ This approach is accurate across any font, size, or container width — unlike `
 - **Zero CSS dependency.** The visually-hidden styles are inlined; you don't need a global `.sr-only` utility.
 
 > If you wire up an inline `more` / `less` button yourself, add `aria-expanded={expanded}` to it for full disclosure semantics. `<Truncate.Toggle>` does this for you.
+
+---
+
+## Limitations
+
+- **Plain strings only.** `children` must be a string, not JSX.
+- **Word wrapping splits on spaces.** CJK and other scripts without spaces between words may wrap differently from the browser.
+- **Client-side measurement.** The server-rendered HTML shows the full text, and the cutoff is applied after hydration.
 
 ---
 
