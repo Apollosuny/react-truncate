@@ -149,14 +149,18 @@ feat!: rename ellipsis prop to suffix
 
 ## Releasing
 
-Releases are automated. Maintainers only:
+Releases are published manually from a maintainer's machine. Maintainers only:
 
 1. Update `version` in `package.json` following [semver](https://semver.org)
 2. Update `CHANGELOG.md`
-3. Commit: `chore: release v0.2.0`
-4. Tag and push:
+3. Commit: `chore: release v0.2.0`, open a PR, and merge it into `main` once CI is green
+4. From an up-to-date `main`, confirm you are logged in (`npm whoami`) and publish:
+   ```bash
+   npm publish --access public
+   ```
+   `prepublishOnly` rebuilds `dist/` before packing
+5. Tag the release commit and push the tag:
    ```bash
    git tag v0.2.0
-   git push origin main --tags
+   git push origin v0.2.0
    ```
-5. The [release workflow](.github/workflows/release.yml) publishes to npm automatically with provenance attestation
