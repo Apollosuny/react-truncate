@@ -1,6 +1,6 @@
 {
   "name": "@apollosuny/react-truncate",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Pixel-accurate multi-line text truncation for React 18/19 with an inline \"see more / see less\" toggle. Zero dependencies, accessible, Next.js App Router ready.",
   "keywords": [
     "react",
