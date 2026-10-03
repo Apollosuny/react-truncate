@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+- Releases are now published manually from a maintainer's machine; removed the tag-triggered GitHub Actions release workflow
+
 ---
 
 ## [0.3.2] — 2026-10-03
